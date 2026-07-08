@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0D0D10">
+<title>QuestLife</title>
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22QuestLife%22,%22short_name%22:%22QuestLife%22,%22display%22:%22standalone%22,%22background_color%22:%22%230D0D10%22,%22theme_color%22:%22%230D0D10%22}">
+<style>
+  :root{
+    --bg:#0D0D10;
+    --card:#1A1A1F;
+    --card-2:#232329;
+    --line:#2A2A31;
+    --accent:#FF7A1A;   /* Fortschritt / Status (XP, Level, Streak, Ratings) */
+    --action:#8B1E2E;   /* interaktive Buttons / primäre CTAs */
+    --good:#6BFF9D;
+    --bad:#FF4D6B;
+    --text:#F5F0EA;
+    --muted:#8A8A94;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body{padding:16px;padding-bottom:90px;max-width:520px;margin:0 auto;}
+
+  .display{font-weight:800;letter-spacing:-0.03em;}
+  h1{font-size:1.25rem;font-weight:800;letter-spacing:-0.02em;margin:0 0 16px 0;}
+  h2{font-size:.8rem;color:var(--muted);font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;margin:26px 0 12px 0;}
+  .muted{color:var(--muted);}
+  .small{font-size:.8rem;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .row{display:flex;align-items:center;gap:12px;}
+  .between{justify-content:space-between;}
+  .pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;
+    background:var(--card-2);font-size:.72rem;color:var(--muted);font-weight:600;}
+
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:12px;padding:11px 15px;
+    font-size:.9rem;font-weight:700;color:var(--text);}
+  .btn-primary{background:var(--action);color:#F5F0EA;}
+  .btn-ghost{background:var(--card-2);color:var(--text);}
+  .btn-danger{background:var(--bad);color:#0D0D10;}
+  .btn-sm{padding:7px 12px;font-size:.8rem;}
+  input,select{font-family:inherit;background:var(--card-2);border:1px solid var(--line);
+    color:var(--text);border-radius:10px;padding:10px 12px;font-size:.9rem;width:100%;}
+  label{font-size:.78rem;color:var(--muted);display:block;margin:12px 0 5px;font-weight:600;}
+
+  /* ---- Header / Charakter ---- */
+  #charCard{background:linear-gradient(160deg,#20141a,var(--card));position:relative;overflow:hidden;}
+  .lvl-line{display:flex;align-items:baseline;gap:8px;}
+  .lvl-line b{font-size:1.05rem;font-weight:800;letter-spacing:-.02em;}
+  .day-big{text-align:right;line-height:1;}
+  .day-big .num{font-size:2.4rem;color:var(--accent);}
+  .day-big .of{font-size:.9rem;color:var(--muted);font-weight:700;}
+  .day-big .tag{display:block;font-size:.72rem;color:var(--muted);margin-top:4px;font-weight:600;letter-spacing:.04em;}
+  .xpbar-track{background:var(--card-2);border-radius:999px;height:9px;overflow:hidden;margin-top:8px;}
+  .xpbar-fill{background:linear-gradient(90deg,var(--accent),#ffb26b);height:100%;border-radius:999px;transition:width .4s ease;}
+
+  .attr-row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:.82rem;cursor:pointer;}
+  .attr-name{width:104px;color:var(--muted);flex-shrink:0;font-weight:600;}
+  .attr-track{flex:1;background:var(--card-2);border-radius:999px;height:7px;overflow:hidden;}
+  .attr-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--good),#3ad07a);}
+  .attr-val{width:38px;text-align:right;color:var(--text);font-weight:700;}
+  .attr-chev{color:var(--muted);font-size:.9rem;}
+
+  /* ---- Wochenbelohnung ---- */
+  #rewardCard label{margin-top:0;}
+  #rewardStatus{margin-top:8px;}
+
+  /* ---- Formular: Sterne + XP-Vorschau ---- */
+  .stars{display:flex;gap:8px;font-size:1.7rem;line-height:1;user-select:none;}
+  .star{color:var(--card-2);cursor:pointer;transition:color .12s,transform .12s;}
+  .star.on{color:var(--accent);}
+  .star:active{transform:scale(1.15);}
+  #xpPreview{font-weight:700;color:var(--accent);}
+
+  /* ---- Quest-Karten ---- */
+  .quest-card{position:relative;height:118px;border-radius:var(--radius);overflow:hidden;
+    border:1px solid var(--line);margin-bottom:12px;cursor:pointer;}
+  .quest-card .quest-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;display:block;background:var(--card-2);}
+  .quest-overlay{position:absolute;inset:0;padding:12px 14px;display:flex;flex-direction:column;
+    justify-content:space-between;transition:opacity .15s;
+    background:linear-gradient(180deg,rgba(13,13,16,.25),rgba(13,13,16,.65));}
+  .quest-top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .quest-icon{width:38px;height:38px;border-radius:11px;background:rgba(13,13,16,.35);
+    backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;
+    border:1px solid rgba(245,240,234,.18);}
+  .quest-icon svg{width:22px;height:22px;}
+  .quest-badges{display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
+  .quest-title{font-weight:800;font-size:1.05rem;letter-spacing:-.02em;
+    text-shadow:0 1px 6px rgba(0,0,0,.7);}
+  .quest-sub{display:flex;gap:8px;margin-top:3px;font-size:.72rem;color:#e8e0d6;
+    text-shadow:0 1px 4px rgba(0,0,0,.7);font-weight:600;flex-wrap:wrap;}
+  .badge-done{background:var(--good);color:#0D0D10;}
+  .badge-skip{background:var(--card-2);color:var(--muted);}
+  .quest-card.done .quest-bg{filter:saturate(.6) brightness(.7);}
+  .quest-card.skip .quest-bg{filter:grayscale(.7) brightness(.6);}
+
+  /* Aktionsebene */
+  .quest-act{position:absolute;inset:0;display:none;flex-direction:column;gap:8px;padding:10px;
+    background:rgba(13,13,16,.84);backdrop-filter:blur(3px);align-items:center;justify-content:center;}
+  .quest-card.acting .quest-act{display:flex;}
+  .quest-card.acting .quest-overlay{opacity:.12;}
+  .act-controls{position:absolute;top:8px;right:8px;display:flex;gap:6px;}
+  .mini-btn{background:rgba(13,13,16,.5);border:1px solid rgba(245,240,234,.2);color:#e8e0d6;
+    width:32px;height:32px;border-radius:9px;font-size:.85rem;padding:0;line-height:1;}
+  .act-row{display:flex;gap:8px;width:100%;}
+  .act-btn{flex:1;height:44px;border-radius:12px;font-size:.95rem;font-weight:800;padding:0 8px;
+    display:flex;align-items:center;justify-content:center;}
+  .act-done{background:var(--good);color:#0D0D10;}
+  .act-skip{background:var(--bad);color:#0D0D10;}
+  .act-confirm{background:var(--action);color:#F5F0EA;}
+  .act-back{background:rgba(245,240,234,.15);color:var(--text);flex:0 0 44px;font-size:1.3rem;font-weight:700;}
+  .act-btn.on{outline:3px solid var(--text);outline-offset:-3px;}
+  .bonus-hint{font-size:.66rem;color:var(--muted);text-align:center;margin-bottom:-2px;}
+  .chips{display:flex;gap:6px;width:100%;}
+  .chip{flex:1;min-height:34px;border-radius:999px;background:rgba(245,240,234,.12);color:var(--text);
+    font-size:.7rem;font-weight:700;padding:6px 4px;}
+  .chip.sel{background:var(--accent);color:#0D0D10;}
+
+  .penalty{background:rgba(255,77,107,.10);border:1px solid var(--bad);border-radius:12px;padding:11px 13px;margin-bottom:8px;}
+
+  /* ---- Wochenstatistik ---- */
+  .weekwrap{display:flex;align-items:flex-end;gap:24px;height:130px;padding-top:8px;justify-content:center;}
+  .weekbar{display:flex;flex-direction:column;align-items:center;gap:8px;width:74px;}
+  .weekbar .bar{width:56px;border-radius:10px 10px 4px 4px;transition:height .5s ease;min-height:6px;}
+  .weekbar .cnt{font-weight:800;font-size:1.1rem;}
+  .weekbar .lbl{font-size:.72rem;color:var(--muted);font-weight:600;}
+  .delta{font-weight:800;font-size:1.1rem;}
+
+  #addQuestForm{display:none;}
+  #addQuestForm.open{display:block;}
+  .empty{text-align:center;color:var(--muted);padding:24px 0;font-size:.9rem;}
+
+  footer{margin-top:28px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+  #fileImport{display:none;}
+
+  /* ---- Modals ---- */
+  .modal-fs{position:fixed;inset:0;z-index:60;background:rgba(13,13,16,.92);backdrop-filter:blur(4px);
+    display:none;align-items:center;justify-content:center;padding:24px;}
+  .modal-fs.show{display:flex;}
+  .modal-inner{background:var(--card);border:1px solid var(--line);border-radius:22px;
+    padding:26px 22px;max-width:360px;width:100%;text-align:center;}
+  .modal-inner .art{width:120px;height:120px;margin:0 auto 6px;}
+  .modal-inner h3{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin:6px 0 6px;}
+  .modal-inner .flavor{color:var(--muted);font-size:.9rem;margin-bottom:20px;}
+  .modal-inner .close{width:100%;background:var(--action);color:#F5F0EA;padding:13px;font-size:1rem;}
+  .attr-detail .big{font-size:2.6rem;font-weight:800;letter-spacing:-.03em;line-height:1;}
+  .attr-detail .chg{font-weight:800;font-size:1rem;margin-top:2px;}
+  .attr-detail .spark{margin:18px 0;}
+  .modal-inner .sub{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;}
+
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card-2);
+    border:1px solid var(--accent);padding:11px 20px;border-radius:999px;font-size:.85rem;
+    opacity:0;pointer-events:none;transition:opacity .3s;z-index:70;font-weight:600;}
+  #toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<h1>⚔️ QuestLife</h1>
+
+<div class="card" id="charCard">
+  <div class="row between" style="align-items:flex-start;">
+    <div style="flex:1;min-width:0;">
+      <div class="lvl-line">
+        <b id="levelLabel">Level 1</b>
+        <span class="pill" id="streakSummary">🔥 0 Streaks</span>
+      </div>
+      <div class="muted small" id="xpLabel" style="margin-top:4px;">0 / 50 XP</div>
+      <div class="xpbar-track"><div class="xpbar-fill" id="xpFill" style="width:0%"></div></div>
+    </div>
+    <div class="day-big">
+      <span class="display"><span class="num" id="dayNum">1</span><span class="of"> / 66</span></span>
+      <span class="tag" id="dayTag">Keep going</span>
+    </div>
+  </div>
+  <div id="attrList" style="margin-top:16px;"></div>
+</div>
+
+<div class="card" id="rewardCard">
+  <label>🎁 Belohnung für diese Woche</label>
+  <input id="rewardInput" placeholder="z.B. Kinoabend, neues Buch …" oninput="onRewardInput()">
+  <div class="muted small" id="rewardStatus"></div>
+</div>
+
+<div id="penaltySection"></div>
+
+<div class="row between" style="margin-top:26px;">
+  <h2 style="margin:0;">Heutige Quests</h2>
+  <button class="btn-primary btn-sm" onclick="openAddForm()">+ Quest</button>
+</div>
+
+<div class="card" id="addQuestForm">
+  <b id="formTitle" style="font-weight:800;">Neue Quest</b>
+  <label>Name der Quest</label>
+  <input id="newQuestName" placeholder="z.B. 20 Min lesen">
+  <label>Attribut</label>
+  <select id="newQuestAttr">
+    <option value="selbstvertrauen">Selbstvertrauen</option>
+    <option value="disziplin">Disziplin</option>
+    <option value="weisheit">Weisheit</option>
+    <option value="fokus">Fokus</option>
+    <option value="staerke">Stärke</option>
+  </select>
+  <label>Schwierigkeit</label>
+  <div class="stars" id="difficultyStars"></div>
+  <label>Geschätzte Dauer (Minuten)</label>
+  <input id="newQuestDuration" type="number" value="10" min="1" oninput="updateXpPreview()">
+  <div class="small" id="xpPreview" style="margin-top:8px;">≈ 29 XP bei Erledigung</div>
+  <label>Strafe bei Verpassen (optional, freier Text)</label>
+  <input id="newQuestPenalty" placeholder="z.B. morgen doppelt machen">
+  <div class="row" style="margin-top:14px;">
+    <button class="btn-primary" id="submitBtn" onclick="submitQuest()">Quest anlegen</button>
+    <button class="btn-ghost" onclick="closeForm()">Abbrechen</button>
+  </div>
+</div>
+
+<div id="questList"></div>
+
+<h2>Diese Woche</h2>
+<div class="card" id="weekCard"></div>
+
+<footer>
+  <button class="btn-ghost btn-sm" onclick="exportData()">⬇️ Backup exportieren</button>
+  <button class="btn-ghost btn-sm" onclick="document.getElementById('fileImport').click()">⬆️ Backup importieren</button>
+  <input type="file" id="fileImport" accept="application/json" onchange="importData(event)">
+</footer>
+
+<div id="toast"></div>
+
+<!-- Achievement-Modal -->
+<div class="modal-fs" id="achievementModal">
+  <div class="modal-inner">
+    <div class="art" id="achArt"></div>
+    <div class="sub" id="achSub">Achievement</div>
+    <h3 id="achTitle">Titel</h3>
+    <div class="flavor" id="achFlavor">Flavor</div>
+    <button class="close" onclick="nextAchievement()">Got it</button>
+  </div>
+</div>
+
+<!-- Attribut-Detail-Modal -->
+<div class="modal-fs" id="attrModal">
+  <div class="modal-inner attr-detail" id="attrModalInner"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'questlife_v1';
+const ATTR_LABELS = {selbstvertrauen:'Selbstvertrauen', disziplin:'Disziplin', weisheit:'Weisheit', fokus:'Fokus', staerke:'Stärke'};
+const MILESTONES = [7,30,66];
+
+/* ---------- Datum-Helfer ---------- */
+function fmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return fmt(new Date()); }
+function shiftDate(base, delta){ const d=new Date(base+'T00:00:00'); d.setDate(d.getDate()+delta); return fmt(d); }
+function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000); }
+function mondayOf(dateStr){ const d=new Date(dateStr+'T00:00:00'); const off=(d.getDay()+6)%7; d.setDate(d.getDate()-off); return fmt(d); }
+
+/* ---------- XP-Formel ---------- */
+// xp = round(schwierigkeit * 8 + dauer * 0.5)
+function computeXP(difficulty, duration){ return Math.round((difficulty||0)*8 + (duration||0)*0.5); }
+
+/* ---------- State ---------- */
+function defaultState(){
+  return {
+    startDate: todayStr(),
+    lastActiveDate: todayStr(),
+    totalXP: 0,
+    attributes: {selbstvertrauen:0, disziplin:0, weisheit:0, fokus:0, staerke:0},
+    quests: [],           // {id,name,attribute,difficulty,duration,xp,penaltyText,streak,lastCompletedDate,lastCompletedXP,lastSkippedDate,active,image}
+    penalties: [],        // {id,questName,date,text,resolved}
+    history: {},          // date -> {completedIds:[...], skippedIds:[...]}
+    attrHistory: {},      // date -> {attr: value}  (tägliche Snapshots)
+    shownLevel: 1,        // höchstes Level, für das ein Popup gezeigt wurde
+    shownStreaks: {},     // "questId-milestone" -> true
+    miscImageCounter: 0,  // Rundlauf-Index (0-8) für den 9-teiligen Misc-Bild-Pool
+    weeklyReward: {weekStart: mondayOf(todayStr()), text:'', lastCelebratedWeek:null}
+  };
+}
+
+function hydrate(parsed){
+  const s = Object.assign(defaultState(), parsed || {});
+  // Migration / Normalisierung (rückwärtskompatibel zu v1)
+  s.attributes = Object.assign({selbstvertrauen:0,disziplin:0,weisheit:0,fokus:0,staerke:0}, s.attributes||{});
+  s.attrHistory = s.attrHistory || {};
+  s.shownStreaks = s.shownStreaks || {};
+  if(typeof s.shownLevel !== 'number') s.shownLevel = levelFromXP(s.totalXP || 0);
+  if(typeof s.miscImageCounter !== 'number') s.miscImageCounter = 0;
+  (s.quests||[]).forEach(q=>{
+    if(!('lastSkippedDate' in q)) q.lastSkippedDate = null;
+    if(!('image' in q)) q.image = assignImage(q.name, s);   // ersetzt die alte SVG-Szene
+    if('scene' in q) delete q.scene;                         // Altfeld entfernen
+    if(!('difficulty' in q)) q.difficulty = 3;
+    if(!('duration' in q)) q.duration = 10;
+    if(!('lastCompletedXP' in q)) q.lastCompletedXP = null;
+    if(typeof q.xp !== 'number') q.xp = computeXP(q.difficulty, q.duration);
+  });
+  for(const d in s.history){ if(!s.history[d].skippedIds) s.history[d].skippedIds = []; }
+  if(!s.weeklyReward || typeof s.weeklyReward !== 'object'){
+    s.weeklyReward = {weekStart: mondayOf(todayStr()), text:'', lastCelebratedWeek:null};
+  } else {
+    if(!s.weeklyReward.weekStart) s.weeklyReward.weekStart = mondayOf(todayStr());
+    if(typeof s.weeklyReward.text !== 'string') s.weeklyReward.text = '';
+    if(!('lastCelebratedWeek' in s.weeklyReward)) s.weeklyReward.lastCelebratedWeek = null;
+  }
+  return s;
+}
+
+let state = load();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return defaultState();
+    return hydrate(JSON.parse(raw));
+  }catch(e){
+    console.error('Ladefehler, starte neu', e);
+    return defaultState();
+  }
+}
+function save(){
+  // täglichen Snapshot des heutigen Attribut-Stands fortschreiben
+  state.attrHistory[todayStr()] = Object.assign({}, state.attributes);
+  pruneHistory();
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){
+    console.error('Speicherfehler', e);
+    showToast('⚠️ Speichern fehlgeschlagen');
+  }
+}
+function pruneHistory(){
+  const cutoff = shiftDate(todayStr(), -180);
+  for(const d in state.attrHistory){ if(d < cutoff) delete state.attrHistory[d]; }
+  for(const d in state.history){ if(d < cutoff) delete state.history[d]; }
+}
+
+/* ---------- XP / Level ---------- */
+function xpForLevel(n){ return Math.round(50 * Math.pow(n, 1.5)); }
+function levelFromXP(totalXP){ let level=1; while(totalXP >= xpForLevel(level)) level++; return level; }
+function xpProgress(totalXP){
+  const level = levelFromXP(totalXP);
+  const prev = level===1 ? 0 : xpForLevel(level-1);
+  const next = xpForLevel(level);
+  return {level, current: totalXP-prev, needed: next-prev};
+}
+
+function uid(){ return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ---------- Bild-Zuweisung (echte Fotos in images/) ----------
+   Einmalig bei Quest-Anlage fix zugewiesen (quest.image), ändert sich nie mehr.
+   Kategorie-Keywords zuerst (erstes Match gewinnt, Teilstring, Kleinschreibung);
+   kein Treffer -> nächstes Bild aus dem 9er-Misc-Pool über state.miscImageCounter. */
+const IMAGE_KEYWORDS = [
+  {img:'cat-aufstehen.jpg',  words:['aufsteh','wecker','früh']},
+  {img:'cat-trinken.jpg',    words:['trink','wasser']},
+  {img:'cat-sport-gym.jpg',  words:['gym','kraft','hantel','gewicht','fitness']},
+  {img:'cat-sport-lauf.jpg', words:['lauf','joggen','renn']},
+  {img:'cat-lesen.jpg',      words:['les','buch']},
+  {img:'cat-meditation.jpg', words:['meditier','meditation','atem']},
+  {img:'cat-arbeiten.jpg',   words:['arbeit','job','code']},
+  {img:'cat-lernen.jpg',     words:['lern','studium','üben','hausaufgabe']},
+  {img:'cat-ernaehrung.jpg', words:['essen','ernährung','gesund']}
+];
+const MISC_COUNT = 9;
+function assignImage(name, st){
+  st = st || state;
+  const n = (name||'').toLowerCase();
+  for(const k of IMAGE_KEYWORDS){ if(k.words.some(w=>n.indexOf(w)!==-1)) return k.img; }
+  const idx = ((st.miscImageCounter||0) % MISC_COUNT + MISC_COUNT) % MISC_COUNT;
+  st.miscImageCounter = (idx + 1) % MISC_COUNT;
+  return 'misc-' + (idx + 1) + '.jpg';
+}
+
+/* ---------- Formular (Anlegen + Bearbeiten) ---------- */
+let editingQuestId = null;
+let formDifficulty = 3;
+
+function renderStars(){
+  let h='';
+  for(let i=1;i<=5;i++){ h += `<span class="star ${i<=formDifficulty?'on':''}" onclick="setDifficulty(${i})">★</span>`; }
+  document.getElementById('difficultyStars').innerHTML = h;
+}
+function setDifficulty(n){ formDifficulty = n; renderStars(); updateXpPreview(); }
+function updateXpPreview(){
+  const dur = parseInt(document.getElementById('newQuestDuration').value) || 0;
+  document.getElementById('xpPreview').textContent = '≈ ' + computeXP(formDifficulty, dur) + ' XP bei Erledigung';
+}
+
+function openAddForm(){
+  editingQuestId = null; formDifficulty = 3;
+  document.getElementById('formTitle').textContent = 'Neue Quest';
+  document.getElementById('submitBtn').textContent = 'Quest anlegen';
+  document.getElementById('newQuestName').value = '';
+  document.getElementById('newQuestAttr').value = 'selbstvertrauen';
+  document.getElementById('newQuestDuration').value = 10;
+  document.getElementById('newQuestPenalty').value = '';
+  renderStars(); updateXpPreview();
+  document.getElementById('addQuestForm').classList.add('open');
+  document.getElementById('addQuestForm').scrollIntoView({block:'nearest'});
+}
+function openEditForm(id, ev){
+  if(ev) ev.stopPropagation();
+  const q = state.quests.find(x=>x.id===id); if(!q) return;
+  editingQuestId = id; formDifficulty = q.difficulty || 3;
+  document.getElementById('formTitle').textContent = 'Quest bearbeiten';
+  document.getElementById('submitBtn').textContent = 'Speichern';
+  document.getElementById('newQuestName').value = q.name;
+  document.getElementById('newQuestAttr').value = q.attribute;
+  document.getElementById('newQuestDuration').value = q.duration || 10;
+  document.getElementById('newQuestPenalty').value = q.penaltyText || '';
+  renderStars(); updateXpPreview();
+  openQuestId = null;
+  document.getElementById('addQuestForm').classList.add('open');
+  render();
+  document.getElementById('addQuestForm').scrollIntoView({block:'nearest'});
+}
+function closeForm(){
+  document.getElementById('addQuestForm').classList.remove('open');
+  editingQuestId = null;
+}
+function submitQuest(){
+  const name = document.getElementById('newQuestName').value.trim();
+  const attr = document.getElementById('newQuestAttr').value;
+  const dur = parseInt(document.getElementById('newQuestDuration').value) || 0;
+  const penaltyText = document.getElementById('newQuestPenalty').value.trim();
+  if(!name){ showToast('Bitte einen Namen eingeben'); return; }
+  const xp = computeXP(formDifficulty, dur);
+  if(editingQuestId){
+    const q = state.quests.find(x=>x.id===editingQuestId);
+    if(q){
+      // gilt nur für zukünftige Erledigungen – bereits verbuchtes XP bleibt unangetastet
+      q.name = name; q.attribute = attr;
+      q.difficulty = formDifficulty; q.duration = dur; q.xp = xp;
+      q.penaltyText = penaltyText;
+    }
+    showToast('Quest aktualisiert');
+  } else {
+    const id = uid();
+    state.quests.push({
+      id, name, attribute: attr,
+      difficulty: formDifficulty, duration: dur, xp,
+      penaltyText: penaltyText || '',
+      streak: 0, lastCompletedDate: null, lastCompletedXP: null, lastSkippedDate: null,
+      active: true, image: assignImage(name)
+    });
+    showToast('Quest angelegt');
+  }
+  closeForm(); save(); render();
+}
+
+function deleteQuest(id, ev){
+  if(ev) ev.stopPropagation();
+  if(!confirm('Diese Quest wirklich löschen? Streak-Historie geht verloren.')) return;
+  state.quests = state.quests.filter(q=>q.id!==id);
+  openQuestId = null;
+  save(); render();
+}
+
+/* ---------- Quest-Status / Aktionsebene ---------- */
+function questStatus(q){
+  const t = todayStr();
+  if(q.lastCompletedDate === t) return 'done';
+  if(q.lastSkippedDate === t) return 'skip';
+  return 'none';
+}
+function histToday(){
+  const t = todayStr();
+  if(!state.history[t]) state.history[t] = {completedIds:[], skippedIds:[]};
+  return state.history[t];
+}
+function listAdd(arr,id){ if(arr.indexOf(id)===-1) arr.push(id); }
+function listRemove(arr,id){ const i=arr.indexOf(id); if(i!==-1) arr.splice(i,1); }
+
+let openQuestId = null;
+let actStage = 'buttons';   // 'buttons' | 'bonus'
+let bonusMult = 1;          // 1 | 1.5 | 2
+
+function toggleActing(id, ev){
+  if(ev) ev.stopPropagation();
+  if(openQuestId===id){ openQuestId = null; }
+  else { openQuestId = id; actStage = 'buttons'; bonusMult = 1; }
+  render();
+}
+
+// Kernfunktion: setzt Zielstatus, verrechnet alten Status sauber gegen
+function applyStatus(q, next, mult){
+  const id = q.id, t = todayStr();
+  const cur = questStatus(q);
+  // alten Status zurücknehmen
+  if(cur==='done'){
+    const amt = (q.lastCompletedXP!=null ? q.lastCompletedXP : q.xp);
+    q.lastCompletedDate = null; q.lastCompletedXP = null;
+    q.streak = Math.max(0, q.streak-1);
+    state.totalXP = Math.max(0, state.totalXP - amt);
+    state.attributes[q.attribute] = Math.max(0, (state.attributes[q.attribute]||0) - amt);
+    listRemove(histToday().completedIds, id);
+    MILESTONES.forEach(m=>{ if(q.streak < m) delete state.shownStreaks[id+'-'+m]; });
+  } else if(cur==='skip'){
+    q.lastSkippedDate = null;
+    listRemove(histToday().skippedIds, id);
+  }
+  // neuen Status anwenden
+  if(next==='done'){
+    const amt = Math.round(q.xp * (mult||1));   // Bonus wirkt NUR auf diese Gutschrift
+    q.lastCompletedDate = t; q.lastCompletedXP = amt;
+    q.streak += 1;
+    state.totalXP += amt;
+    state.attributes[q.attribute] = (state.attributes[q.attribute]||0) + amt;
+    listAdd(histToday().completedIds, id);
+    checkLevelUp();
+    MILESTONES.forEach(m=>{
+      const key = id+'-'+m;
+      if(q.streak===m && !state.shownStreaks[key]){ state.shownStreaks[key]=true; queueStreak(q, m); }
+    });
+  } else if(next==='skip'){
+    q.lastSkippedDate = t;
+    listAdd(histToday().skippedIds, id);
+  }
+}
+
+// Einfaches Toggle (Skip-Button, Done-Undo, sowie Tests)
+function markQuest(id, action, ev){
+  if(ev) ev.stopPropagation();
+  const q = state.quests.find(x=>x.id===id); if(!q) return;
+  const cur = questStatus(q);
+  applyStatus(q, cur===action ? 'none' : action, 1);
+  openQuestId = null;
+  save(); render(); flushAchievements();
+}
+
+// Done angetippt: erledigt -> Undo; sonst Bonus-Auswahl öffnen
+function onDonePressed(id, ev){
+  if(ev) ev.stopPropagation();
+  const q = state.quests.find(x=>x.id===id); if(!q) return;
+  if(questStatus(q)==='done'){ markQuest(id,'done'); }   // rückgängig
+  else { openQuestId = id; actStage = 'bonus'; bonusMult = 1; render(); }
+}
+function onSkipPressed(id, ev){ if(ev) ev.stopPropagation(); markQuest(id,'skip'); }
+function setBonus(m, ev){ if(ev) ev.stopPropagation(); bonusMult = m; render(); }
+function actBack(ev){ if(ev) ev.stopPropagation(); actStage = 'buttons'; render(); }
+function confirmDone(id, ev){
+  if(ev) ev.stopPropagation();
+  const q = state.quests.find(x=>x.id===id); if(!q) return;
+  applyStatus(q, 'done', bonusMult);
+  openQuestId = null; actStage = 'buttons'; bonusMult = 1;
+  save(); render(); flushAchievements();
+}
+
+function resolvePenalty(id){
+  const p = state.penalties.find(p=>p.id===id);
+  if(p) p.resolved = true;
+  save(); render();
+}
+
+/* ---------- Tages-Rollover ---------- */
+// Verpasst = am letzten aktiven Tag WEDER erledigt NOCH übersprungen -> Streak reißt + Strafe.
+function processDayRollover(){
+  const today = todayStr();
+  if(state.lastActiveDate === today) return;
+  const last = state.lastActiveDate;
+  state.quests.forEach(q=>{
+    const okLast = (q.lastCompletedDate===last) || (q.lastSkippedDate===last);
+    if(!okLast && q.streak > 0){
+      q.streak = 0;
+      MILESTONES.forEach(m=>delete state.shownStreaks[q.id+'-'+m]);
+      if(q.penaltyText){
+        state.penalties.push({id:uid(), questName:q.name, date:today, text:q.penaltyText, resolved:false});
+      }
+    }
+  });
+  state.lastActiveDate = today;
+  save();
+}
+
+/* ---------- Wochenbelohnung ---------- */
+// Vollständige Woche = an jedem geprüften Tag hat JEDE aktive Quest Done ODER Skip.
+function isWeekComplete(mondayStr, upToTodayOnly){
+  const active = state.quests.filter(q=>q.active);
+  if(active.length===0) return false;
+  const today = todayStr();
+  for(let i=0;i<7;i++){
+    const day = shiftDate(mondayStr, i);
+    if(upToTodayOnly && day>today) break;      // laufende Woche: Zukunft nicht verlangen
+    const h = state.history[day];
+    for(const q of active){
+      const ok = h && ((h.completedIds && h.completedIds.indexOf(q.id)!==-1) ||
+                       (h.skippedIds && h.skippedIds.indexOf(q.id)!==-1));
+      if(!ok) return false;
+    }
+  }
+  return true;
+}
+function processWeeklyReward(){
+  const curMon = mondayOf(todayStr());
+  const wr = state.weeklyReward;
+  if(wr.weekStart === curMon) return;          // gleiche Kalenderwoche -> nichts zu tun
+  const endedWeek = wr.weekStart;
+  if(wr.text && wr.lastCelebratedWeek !== endedWeek && isWeekComplete(endedWeek, false)){
+    wr.lastCelebratedWeek = endedWeek;
+    queueWeeklyReward(wr.text);
+  }
+  wr.weekStart = curMon;                        // neue Woche: Feld immer zurücksetzen
+  wr.text = '';
+  save();
+}
+function onRewardInput(){
+  state.weeklyReward.text = document.getElementById('rewardInput').value;
+  document.getElementById('rewardStatus').innerHTML = rewardStatusText();
+  save();
+}
+function rewardStatusText(){
+  const wr = state.weeklyReward;
+  if(!wr.text) return 'Keine Belohnung gesetzt.';
+  const complete = isWeekComplete(mondayOf(todayStr()), true);
+  return complete
+    ? '<span style="color:var(--good);font-weight:700;">Diese Woche bisher lückenlos ✓</span>'
+    : 'Bleib lückenlos (Done oder Skip an jedem Tag), dann winkt die Belohnung.';
+}
+
+/* ---------- Achievements ---------- */
+let achQueue = [];
+let achVisible = false;
+const LEVEL_FLAVORS = [
+  'Ein neues Kapitel beginnt.',
+  'Stärker als gestern.',
+  'Deine Beständigkeit trägt Früchte.',
+  'Der Aufstieg gehört dir.',
+  'Kleine Schritte, großer Weg.',
+  'Du wächst mit jeder Quest.',
+  'Weiter nach oben.'
+];
+const STREAK_FLAVORS = [
+  'Tag für Tag entsteht Gewohnheit.',
+  'Dranbleiben zahlt sich aus.',
+  'Diese Kette hält.',
+  'Konsequenz ist deine Superkraft.',
+  'Ein Streak, auf den du stolz sein kannst.',
+  'Nicht gebrochen. Weiter so.'
+];
+const WEEK_FLAVORS = [
+  'Eine ganze Woche durchgezogen.',
+  'Sieben Tage Haltung – stark.',
+  'Verdient. Genieß es.',
+  'So sieht Beständigkeit aus.',
+  'Du hast es dir erarbeitet.'
+];
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function checkLevelUp(){
+  const lvl = levelFromXP(state.totalXP);
+  if(lvl > state.shownLevel){
+    for(let l=state.shownLevel+1; l<=lvl; l++){
+      achQueue.push({sub:'Level Up', title:'Level '+l+' erreicht', flavor: pick(LEVEL_FLAVORS), art: levelIllustration(l)});
+    }
+    state.shownLevel = lvl;
+  }
+}
+function queueStreak(q, m){
+  achQueue.push({sub:'Streak-Meilenstein', title:m+' Tage Streak', flavor: pick(STREAK_FLAVORS)+'  ·  '+q.name, art: streakIllustration(m)});
+}
+function queueWeeklyReward(text){
+  achQueue.push({sub:'Wochenbelohnung', title:'Woche geschafft!', flavor: '🎁 '+text+'  ·  '+pick(WEEK_FLAVORS), art: weekIllustration()});
+}
+function flushAchievements(){ if(!achVisible) nextAchievement(); }
+function nextAchievement(){
+  const modal = document.getElementById('achievementModal');
+  if(achQueue.length===0){ modal.classList.remove('show'); achVisible=false; return; }
+  const a = achQueue.shift();
+  document.getElementById('achArt').innerHTML = a.art;
+  document.getElementById('achSub').textContent = a.sub;
+  document.getElementById('achTitle').textContent = a.title;
+  document.getElementById('achFlavor').textContent = a.flavor;
+  modal.classList.add('show');
+  achVisible = true;
+}
+
+/* ---------- Attribut-Detail ---------- */
+function attrValueAt(attr, dateStr){
+  let best=null, val=0;
+  for(const d in state.attrHistory){
+    if(d<=dateStr && (best===null || d>best)){ best=d; val=state.attrHistory[d][attr]||0; }
+  }
+  return best===null ? 0 : val;
+}
+function openAttrDetail(attr){
+  const t = todayStr();
+  const cur = state.attributes[attr]||0;
+  const change = cur - attrValueAt(attr, shiftDate(t,-7));
+  const vals = [];
+  for(let i=13;i>=0;i--) vals.push(attrValueAt(attr, shiftDate(t,-i)));
+  const chgColor = change>0 ? 'var(--good)' : (change<0 ? 'var(--bad)' : 'var(--muted)');
+  const chgText = (change>0?'+':'') + change;
+  document.getElementById('attrModalInner').innerHTML = `
+    <div class="sub">${ATTR_LABELS[attr]}</div>
+    <div class="big" style="margin-top:6px;">${cur}</div>
+    <div class="chg" style="color:${chgColor};">${chgText} <span class="muted small" style="font-weight:600;">letzte 7 Tage</span></div>
+    <div class="spark">${sparkline(vals)}</div>
+    <div class="muted small" style="margin-bottom:18px;">Verlauf der letzten 14 Tage</div>
+    <button class="close" onclick="closeAttrModal()">Schließen</button>`;
+  document.getElementById('attrModal').classList.add('show');
+}
+function closeAttrModal(){ document.getElementById('attrModal').classList.remove('show'); }
+
+function sparkline(vals){
+  const W=280, H=64, pad=6;
+  const min=Math.min(...vals), max=Math.max(...vals);
+  const range = (max-min)||1;
+  const n = vals.length;
+  const pts = vals.map((v,i)=>{
+    const x = pad + (i/(n-1))*(W-2*pad);
+    const y = H-pad - ((v-min)/range)*(H-2*pad);
+    return x.toFixed(1)+','+y.toFixed(1);
+  });
+  const line = pts.join(' ');
+  const area = `${pad},${H-pad} ${line} ${W-pad},${H-pad}`;
+  const last = pts[pts.length-1].split(',');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="spg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF7A1A" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#FF7A1A" stop-opacity="0"/></linearGradient></defs>
+    <polygon points="${area}" fill="url(#spg)"/>
+    <polyline points="${line}" fill="none" stroke="#FF7A1A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="#FF7A1A"/>
+  </svg>`;
+}
+
+/* ---------- Export / Import ---------- */
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'questlife-backup-' + todayStr() + '.json'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup exportiert');
+}
+function importData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const parsed = JSON.parse(e.target.result);
+      if(!confirm('Import überschreibt deinen aktuellen Stand. Fortfahren?')){ event.target.value=''; return; }
+      state = hydrate(parsed);
+      save(); render();
+      showToast('Backup importiert');
+    }catch(err){
+      alert('Datei konnte nicht gelesen werden: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str==null?'':str; return d.innerHTML; }
+
+/* ---------- Wochenstatistik (rollierend, für Balkenvergleich) ---------- */
+function countCompleted(fromOffset, toOffset){
+  const t = todayStr(); let c=0;
+  for(let i=fromOffset;i<=toOffset;i++){
+    const h = state.history[shiftDate(t,-i)];
+    if(h && h.completedIds) c += h.completedIds.length;
+  }
+  return c;
+}
+
+/* ================= ICONS (weiß, simpel) ================= */
+const ICON_KEYWORDS = [
+  {icon:'sun',      words:['aufsteh','wach','morgen','früh','sonne','sun','wake']},
+  {icon:'water',    words:['trink','wasser','water','drink','hydrat']},
+  {icon:'dumbbell', words:['train','sport','gym','workout','hantel','kraft','fitness','übung','liege','push']},
+  {icon:'run',      words:['lauf','jogg','run','cardio','spazier','walk','rad','bike','velo','geh ']},
+  {icon:'book',     words:['les','read','buch','study','vokab']},
+  {icon:'meditate', words:['medit','achtsam','atem','yoga','breath','ruhe']},
+  {icon:'moon',     words:['schlaf','bett','sleep','nachtruhe','enthalt','verzicht','nofap','abstin','nüchtern']},
+  {icon:'apple',    words:['ess','ernähr','food','obst','gemüse','gesund','diät','koch','salat']},
+  {icon:'pen',      words:['schreib','journal','tagebuch','write','notiz','plan','dankbar']},
+  {icon:'code',     words:['code','program','arbeit','work','projekt','coding','dev','lern','stud']},
+  {icon:'sparkle',  words:['putz','aufräum','sauber','clean','wäsche','tidy']},
+  {icon:'heart',    words:['freund','famil','call','anruf','sozial','beziehung','liebe']}
+];
+function matchIcon(name){
+  const n = (name||'').toLowerCase();
+  for(const k of ICON_KEYWORDS){ if(k.words.some(w=>n.indexOf(w)!==-1)) return k.icon; }
+  return 'star';
+}
+const ICONS = {
+  sun:'<circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="5" y1="5" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19" y2="19"/><line x1="19" y1="5" x2="17.5" y2="6.5"/><line x1="6.5" y1="17.5" x2="5" y2="19"/>',
+  water:'<path d="M12 3 C12 3 5 11 5 15 a7 7 0 0 0 14 0 C19 11 12 3 12 3 Z"/>',
+  dumbbell:'<line x1="5" y1="12" x2="19" y2="12"/><rect x="2" y="8" width="3" height="8" rx="1"/><rect x="19" y="8" width="3" height="8" rx="1"/><rect x="5" y="9.5" width="2" height="5" rx="1"/><rect x="17" y="9.5" width="2" height="5" rx="1"/>',
+  run:'<circle cx="15" cy="5" r="2"/><path d="M15 8 l-3 4 3 3 -1 5"/><path d="M12 12 l-4 1"/><path d="M18 11 l-3 2"/>',
+  book:'<path d="M4 5 a2 2 0 0 1 2-2 h5 v16 h-5 a2 2 0 0 0-2 2 Z"/><path d="M20 5 a2 2 0 0 0-2-2 h-5 v16 h5 a2 2 0 0 1 2 2 Z"/>',
+  meditate:'<circle cx="12" cy="5" r="2"/><path d="M12 8 c-3 0-6 2-6 5 h12 c0-3-3-5-6-5Z"/><path d="M6 13 l6 2 6-2"/>',
+  moon:'<path d="M20 14 A8 8 0 1 1 10 4 a6 6 0 0 0 10 10 Z"/>',
+  apple:'<path d="M12 9 c-2-3-7-2-7 3 c0 4 3 8 7 8 c4 0 7-4 7-8 c0-5-5-6-7-3Z"/><path d="M12 9 v-2 a2 2 0 0 1 2-2"/>',
+  pen:'<path d="M4 20 l1.2-4.2 L15 6 l3 3 L8.2 18.8 Z"/><line x1="13.5" y1="7.5" x2="16.5" y2="10.5"/>',
+  code:'<polyline points="8 8 4 12 8 16"/><polyline points="16 8 20 12 16 16"/><line x1="13.5" y1="6" x2="10.5" y2="18"/>',
+  sparkle:'<path d="M12 3 l1.6 5.4 5.4 1.6 -5.4 1.6 -1.6 5.4 -1.6-5.4 -5.4-1.6 5.4-1.6Z"/>',
+  heart:'<path d="M12 20 C5 14 4 9.5 6.8 6.8 c2-1.9 4.2-.8 5.2 1.1 c1-1.9 3.2-3 5.2-1.1 C20 9.5 19 14 12 20Z"/>',
+  star:'<path d="M12 3 l2.6 6 6.4 .5 -4.9 4.2 1.5 6.3 -5.6-3.4 -5.6 3.4 1.5-6.3 -4.9-4.2 6.4-.5Z"/>'
+};
+function iconSVG(name){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">${ICONS[name]||ICONS.star}</svg>`;
+}
+
+/* (Alte generische + Kategorie-SVG-Szenen entfernt – ersetzt durch echte Fotos in images/, siehe assignImage & .quest-bg) */
+
+/* ================= Achievement-Illustrationen ================= */
+function levelIllustration(level){
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="alv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd89b"/><stop offset="1" stop-color="#FF7A1A"/></linearGradient></defs>
+    <circle cx="60" cy="60" r="52" fill="#FF7A1A" opacity="0.12"/>
+    <path d="M60 18 l11 24 26 3 -19 18 5 26 -23-13 -23 13 5-26 -19-18 26-3Z" fill="url(#alv)"/>
+    <text x="60" y="69" text-anchor="middle" font-size="26" font-weight="800" fill="#0D0D10" font-family="-apple-system,sans-serif">${level}</text>
+  </svg>`;
+}
+function streakIllustration(n){
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="afl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd24d"/><stop offset="0.55" stop-color="#FF7A1A"/><stop offset="1" stop-color="#FF4D6B"/></linearGradient></defs>
+    <circle cx="60" cy="60" r="52" fill="#FF4D6B" opacity="0.12"/>
+    <path d="M60 22 c9 15 26 22 26 42 a26 26 0 0 1 -52 0 c0-9 5-15 10-21 c2 6 6 8 10 8 c-6-10 0-22 6-29Z" fill="url(#afl)"/>
+    <text x="60" y="74" text-anchor="middle" font-size="19" font-weight="800" fill="#0D0D10" font-family="-apple-system,sans-serif">${n}</text>
+  </svg>`;
+}
+function weekIllustration(){
+  return `<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="awk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8bffbf"/><stop offset="1" stop-color="#6BFF9D"/></linearGradient></defs>
+    <circle cx="60" cy="60" r="52" fill="#6BFF9D" opacity="0.12"/>
+    <rect x="38" y="58" width="44" height="34" rx="3" fill="url(#awk)"/>
+    <rect x="34" y="48" width="52" height="14" rx="3" fill="#4fe089"/>
+    <rect x="55" y="48" width="10" height="44" fill="#2fb866"/>
+    <path d="M60 48 C50 36 36 44 44 52 C48 56 56 50 60 48Z" fill="#4fe089"/>
+    <path d="M60 48 C70 36 84 44 76 52 C72 56 64 50 60 48Z" fill="#4fe089"/>
+  </svg>`;
+}
+
+/* ================= RENDER ================= */
+function render(){
+  const prog = xpProgress(state.totalXP);
+  document.getElementById('levelLabel').textContent = 'Level ' + prog.level;
+  document.getElementById('xpLabel').textContent = prog.current + ' / ' + prog.needed + ' XP';
+  document.getElementById('xpFill').style.width = (prog.needed>0 ? Math.min(100,(prog.current/prog.needed)*100) : 100) + '%';
+
+  const activeStreaks = state.quests.filter(q=>q.streak>0).length;
+  document.getElementById('streakSummary').textContent = '🔥 ' + activeStreaks + ' Streak' + (activeStreaks===1?'':'s');
+
+  const dayNum = Math.min(66, daysBetween(state.startDate, todayStr()) + 1);
+  document.getElementById('dayNum').textContent = dayNum;
+  document.getElementById('dayTag').textContent = dayNum>=66 ? 'Vollendet' : 'Keep going';
+
+  // Wochenbelohnung
+  const ri = document.getElementById('rewardInput');
+  if(document.activeElement !== ri) ri.value = state.weeklyReward.text || '';
+  document.getElementById('rewardStatus').innerHTML = rewardStatusText();
+
+  // Attribute
+  const attrList = document.getElementById('attrList');
+  const maxAttr = Math.max(1, ...Object.values(state.attributes));
+  attrList.innerHTML = Object.keys(ATTR_LABELS).map(key=>{
+    const val = state.attributes[key] || 0;
+    const w = Math.min(100, (val/maxAttr)*100);
+    return `<div class="attr-row" onclick="openAttrDetail('${key}')">
+        <div class="attr-name">${ATTR_LABELS[key]}</div>
+        <div class="attr-track"><div class="attr-fill" style="width:${w}%"></div></div>
+        <div class="attr-val">${val}</div>
+        <div class="attr-chev">›</div>
+      </div>`;
+  }).join('');
+
+  // Strafen
+  const penSection = document.getElementById('penaltySection');
+  const openPenalties = state.penalties.filter(p=>!p.resolved);
+  penSection.innerHTML = openPenalties.length ? '<h2>Offene Strafen</h2>' + openPenalties.map(p=>`
+      <div class="penalty">
+        <div class="row between">
+          <div><b>${escapeHtml(p.questName)}</b><div class="muted small">${escapeHtml(p.text)}</div></div>
+          <button class="btn-ghost btn-sm" onclick="resolvePenalty('${p.id}')">Erledigt</button>
+        </div>
+      </div>`).join('') : '';
+
+  // Quest-Karten
+  const list = document.getElementById('questList');
+  const active = state.quests.filter(q=>q.active);
+  if(active.length===0){
+    list.innerHTML = '<div class="card"><div class="empty">Noch keine Quests. Leg deine erste über "+ Quest" an.</div></div>';
+  } else {
+    list.innerHTML = active.map(q=>{
+      const st = questStatus(q);
+      const acting = openQuestId===q.id;
+      const badges = [];
+      if(st==='done') badges.push('<span class="pill badge-done">✓ Erledigt</span>');
+      else if(st==='skip') badges.push('<span class="pill badge-skip">⏸ Pausiert</span>');
+      badges.push('<span class="pill">🔥 '+q.streak+'</span>');
+
+      let actPanel;
+      if(acting && actStage==='bonus'){
+        const preview = Math.round(q.xp * bonusMult);
+        actPanel = `
+          <div class="bonus-hint">Bonus für heute</div>
+          <div class="chips">
+            <button class="chip ${bonusMult===1?'sel':''}" onclick="setBonus(1,event)">Normal</button>
+            <button class="chip ${bonusMult===1.5?'sel':''}" onclick="setBonus(1.5,event)">Mehr ×1.5</button>
+            <button class="chip ${bonusMult===2?'sel':''}" onclick="setBonus(2,event)">Deutlich ×2</button>
+          </div>
+          <div class="act-row">
+            <button class="act-btn act-back" onclick="actBack(event)">‹</button>
+            <button class="act-btn act-confirm" onclick="confirmDone('${q.id}',event)">✓ +${preview} XP</button>
+          </div>`;
+      } else {
+        actPanel = `
+          <div class="act-controls">
+            <button class="mini-btn" onclick="openEditForm('${q.id}',event)">✏️</button>
+            <button class="mini-btn" onclick="deleteQuest('${q.id}',event)">🗑</button>
+          </div>
+          <div class="act-row">
+            <button class="act-btn act-done ${st==='done'?'on':''}" onclick="onDonePressed('${q.id}',event)">✓ Done</button>
+            <button class="act-btn act-skip ${st==='skip'?'on':''}" onclick="onSkipPressed('${q.id}',event)">Skip</button>
+          </div>`;
+      }
+
+      return `<div class="quest-card ${st} ${acting?'acting':''}" data-qid="${q.id}" onclick="toggleActing('${q.id}',event)">
+        <img class="quest-bg" loading="lazy" src="images/${q.image}" alt="">
+        <div class="quest-overlay">
+          <div class="quest-top">
+            <div class="quest-icon">${iconSVG(matchIcon(q.name))}</div>
+            <div class="quest-badges">${badges.join('')}</div>
+          </div>
+          <div>
+            <div class="quest-title">${escapeHtml(q.name)}</div>
+            <div class="quest-sub">
+              <span>${ATTR_LABELS[q.attribute]}</span><span>+${q.xp} XP</span>
+              ${q.penaltyText ? '<span>⚠️ '+escapeHtml(q.penaltyText)+'</span>' : ''}
+            </div>
+          </div>
+        </div>
+        <div class="quest-act">${actPanel}</div>
+      </div>`;
+    }).join('');
+  }
+
+  renderWeek();
+}
+
+function renderWeek(){
+  const thisWeek = countCompleted(0,6);
+  const lastWeek = countCompleted(7,13);
+  const max = Math.max(1, thisWeek, lastWeek);
+  const h = v => Math.round((v/max)*110) + 6;
+  let deltaHtml;
+  if(lastWeek===0){
+    deltaHtml = thisWeek>0 ? '<span class="delta" style="color:var(--good);">Neu</span>' : '<span class="delta muted">–</span>';
+  } else {
+    const pct = Math.round(((thisWeek-lastWeek)/lastWeek)*100);
+    const col = pct>0?'var(--good)':(pct<0?'var(--bad)':'var(--muted)');
+    deltaHtml = `<span class="delta" style="color:${col};">${pct>0?'+':''}${pct}%</span>`;
+  }
+  document.getElementById('weekCard').innerHTML = `
+    <div class="row between" style="margin-bottom:4px;">
+      <span class="muted small">Erledigte Quests (rollierende 7 Tage)</span>${deltaHtml}
+    </div>
+    <div class="weekwrap">
+      <div class="weekbar">
+        <div class="cnt muted">${lastWeek}</div>
+        <div class="bar" style="height:${h(lastWeek)}px;background:var(--card-2);"></div>
+        <div class="lbl">Vorwoche</div>
+      </div>
+      <div class="weekbar">
+        <div class="cnt" style="color:var(--accent);">${thisWeek}</div>
+        <div class="bar" style="height:${h(thisWeek)}px;background:linear-gradient(180deg,var(--accent),#b34f0f);"></div>
+        <div class="lbl">Diese Woche</div>
+      </div>
+    </div>`;
+}
+
+/* ---------- Swipe zum Öffnen der Karte ---------- */
+(function(){
+  const list = document.getElementById('questList');
+  let sx=null, qid=null;
+  list.addEventListener('touchstart', e=>{
+    const c = e.target.closest('.quest-card');
+    if(c){ sx = e.touches[0].clientX; qid = c.dataset.qid; }
+  }, {passive:true});
+  list.addEventListener('touchend', e=>{
+    if(sx!=null && qid){
+      const dx = e.changedTouches[0].clientX - sx;
+      if(Math.abs(dx) > 45){ openQuestId = qid; actStage='buttons'; bonusMult=1; render(); }
+    }
+    sx=null; qid=null;
+  });
+})();
+
+/* ---------- Init ---------- */
+processDayRollover();
+processWeeklyReward();
+save();      // heutigen Snapshot sichern
+render();
+flushAchievements();
+</script>
+</body>
+</html>
